@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FMS">
+    <link rel="manifest" href="manifest.json">
+    <title>File Management System - Mobile</title>
+    <!-- SheetJS library for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Mobile optimizations */
+        input, select, textarea, button {
+            font-size: 16px !important; /* Prevents zoom on iOS */
+        }
+        
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        /* Welcome Page */
+        .welcome-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            color: white;
+            padding: 20px;
+        }
+        .welcome-title {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .welcome-subtitle {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        .install-prompt {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        /* Login Container - Mobile optimized */
+        .login-container {
+            max-width: 100%;
+            margin: 20px;
+            background: white;
+            padding: 30px 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .login-container h2 {
+            color: #667eea;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+        
+        /* Form Elements - Touch friendly */
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        /* Buttons - Touch friendly */
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            min-height: 48px;
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-secondary, .btn-success, .btn-excel, .btn-csv, .btn-html {
+            padding: 14px 18px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 48px;
+            white-space: nowrap;
+        }
+        .btn-secondary { background: #6c757d; }
+        .btn-success { background: #28a745; }
+        .btn-excel { background: #217346; }
+        .btn-csv { background: #0066cc; }
+        .btn-html { background: #e74c3c; }
+        .btn-edit {
+            padding: 10px 16px;
+            background: #ffc107;
+            color: #333;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 8px;
+            font-weight: 600;
+            min-height: 44px;
+        }
+        .btn-delete {
+            padding: 10px 16px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            min-height: 44px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        /* Messages */
+        .error-message, .success-message, .info-message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+            display: none;
+        }
+        .error-message {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+        .success-message {
+            color: #155724;
+            background: #d4edda;
+            border: 2px solid #28a745;
+            font-weight: bold;
+        }
+        .info-message {
+            color: #004085;
+            background: #cce5ff;
+            border: 2px solid #0066cc;
+        }
+        .error-message.show, .success-message.show, .info-message.show {
+            display: block;
+        }
+        
+        /* Mobile Navigation */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        .mobile-nav-item {
+            flex: 1;
+            text-align: center;
+            color: white;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 0 5px;
+            font-size: 0.85rem;
+        }
+        .mobile-nav-item.active {
+            background: rgba(102, 126, 234, 0.3);
+        }
+        .mobile-nav-icon {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        /* Main Content - Mobile */
+        .main-content {
+            padding: 20px;
+            padding-bottom: 80px; /* Space for bottom nav */
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .main-content h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        
+        /* Stats Container - Mobile */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+        .stat-card p {
+            color: #666;
+            font-size: 0.85rem;
+        }
+        
+        /* Entry Form - Mobile */
+        .entry-form {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .entry-form h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        .export-section {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .export-section h3 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        .storage-info {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.85rem;
+        }
+        .storage-info strong {
+            color: #856404;
+        }
+        
+        /* Database Folders - Mobile Grid */
+        .database-folders {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .database-folders h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        .folder-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .folder-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            color: white;
+            position: relative;
+            transition: transform 0.2s;
+            min-height: 90px;
+        }
+        .folder-item:active {
+            transform: scale(0.98);
+        }
+        .folder-icon {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .folder-count {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255,255,255,0.3);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        
+        /* Modal - Mobile fullscreen */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            overflow-y: auto;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 0;
+            padding: 20px;
+            width: 100%;
+            min-height: 100vh;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            position: sticky;
+            top: 0;
+            background: white;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .modal-header h2 {
+            font-size: 1.2rem;
+        }
+        .close {
+            color: #aaa;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 10px;
+        }
+        
+        /* Entries List - Mobile */
+        .entry-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .entry-images {
+            margin-bottom: 15px;
+        }
+        .entry-image {
+            width: 100%;
+            height: auto;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .entry-details h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        .entry-link {
+            display: inline-block;
+            margin-bottom: 10px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            word-break: break-all;
+            font-size: 0.9rem;
+        }
+        .entry-info p {
+            margin: 6px 0;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        .entry-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* Category selector */
+        .category-selector {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .category-btn {
+            padding: 15px 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 60px;
+        }
+        .category-btn:active {
+            transform: scale(0.98);
+        }
+        
+        @media (min-width: 768px) {
+            .folder-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            .stats-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .form-row {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Welcome Page -->
+    <div id="welcomePage" class="page active">
+        <div class="welcome-container">
+            <h1 class="welcome-title">📁 FMS Mobile</h1>
+            <p class="welcome-subtitle">File Management System</p>
+            <div class="install-prompt" id="installPrompt" style="display: none;">
+                <strong>📲 Install as App!</strong><br>
+                Tap "Add to Home Screen" in your browser menu
+            </div>
+            <p style="color: white; margin-bottom: 20px;">💾 Secure | 🖼️ Images | ✏️ Edit</p>
+            <button class="btn-primary" onclick="showPage('loginPage')" style="max-width: 300px;">Enter System</button>
+        </div>
+    </div>
+
+    <!-- Login Page -->
+    <div id="loginPage" class="page">
+        <div class="login-container">
+            <h2>🔐 Login</h2>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" placeholder="Enter username" autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="Enter password" autocomplete="current-password">
+            </div>
+            <div class="form-group">
+                <label>Admin Password</label>
+                <input type="password" id="adminPassword" placeholder="Enter admin password" autocomplete="off">
+            </div>
+            <button class="btn-primary" onclick="handleLogin()">Login</button>
+            <div id="loginError" class="error-message"></div>
+        </div>
+    </div>
+
+    <!-- Access Password Page -->
+    <div id="accessPasswordPage" class="page">
+        <div class="login-container">
+            <h2>🔒 Access Verification</h2>
+            <div class="form-group">
+                <label>Access Password</label>
+                <input type="password" id="accessPassword" placeholder="Enter access password" autocomplete="off">
+            </div>
+            <button class="btn-primary" onclick="handleAccessPassword()">Verify</button>
+            <div id="accessError" class="error-message"></div>
+        </div>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div id="dashboardPage" class="page">
+        <div class="main-content">
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="content-section active">
+                <h2>📊 Dashboard</h2>
+                
+                <div class="storage-info">
+                    <strong>💾 Backup:</strong><br>
+                    Export → Move to phone storage folder
+                </div>
+                
+                <div class="export-section">
+                    <h3>Export Data</h3>
+                    <div class="button-group" style="justify-content: center;">
+                        <button class="btn-html" onclick="exportAllDataHTML()">🖼️ HTML</button>
+                        <button class="btn-success" onclick="exportAllDataJSON()">📥 JSON</button>
+                        <button class="btn-secondary" onclick="document.getElementById('importFile').click()">📤 Import</button>
+                    </div>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+                </div>
+
+                <div class="category-selector">
+                    <div class="category-grid">
+                        <button class="category-btn" onclick="showSection('pol')">POL</button>
+                        <button class="category-btn" onclick="showSection('amca')">AMCA</button>
+                        <button class="category-btn" onclick="showSection('russ')">RUSS</button>
+                        <button class="category-btn" onclick="showSection('ind')">IND</button>
+                        <button class="category-btn" onclick="showSection('ani')">ANI</button>
+                        <button class="category-btn" onclick="showSection('anti')">ANTI</button>
+                    </div>
+                </div>
+
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <h3>POL</h3>
+                        <p class="stat-number" id="polCount">0</p>
+                        <p>Entries</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>AMCA</h3>
+                        <p class="stat-number" id="amcaCount">0</p>
+                        <p>Entries</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>RUSS</h3>
+                        <p class="stat-number" id="russCount">0</p>
+                        <p>Entries</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>IND</h3>
+                        <p class="stat-number" id="indCount">0</p>
+                        <p>Entries</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>ANI</h3>
+                        <p class="stat-number" id="aniCount">0</p>
+                        <p>Entries</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>ANTI</h3>
+                        <p class="stat-number" id="antiCount">0</p>
+                        <p>Entries</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category sections will be generated dynamically -->
+            <div id="pol" class="content-section"></div>
+            <div id="amca" class="content-section"></div>
+            <div id="russ" class="content-section"></div>
+            <div id="ind" class="content-section"></div>
+            <div id="ani" class="content-section"></div>
+            <div id="anti" class="content-section"></div>
+        </div>
+
+        <!-- Mobile Bottom Navigation -->
+        <div class="mobile-nav">
+            <div class="mobile-nav-item active" onclick="showSection('dashboard')">
+                <span class="mobile-nav-icon">🏠</span>
+                Home
+            </div>
+            <div class="mobile-nav-item" onclick="toggleCategoryMenu()">
+                <span class="mobile-nav-icon">📁</span>
+                Menu
+            </div>
+            <div class="mobile-nav-item" onclick="handleLogout()">
+                <span class="mobile-nav-icon">🚪</span>
+                Logout
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"></h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="modalEntries"></div>
+        </div>
+    </div>
+
+    <script>
+        // PWA Install prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installPrompt').style.display = 'block';
+        });
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {
+                console.log('Service worker registration failed');
+            });
+        }
+
+        // Initialize
+        const DEFAULT_CREDS = {
+            username: 'admin',
+            password: 'admin123',
+            adminPassword: 'master@2024',
+            accessPassword: 'access@2024'
+        };
+
+        let currentModalCategory = '';
+        let currentModalDatabase = '';
+
+        const CATEGORIES = {
+            pol: { name: 'POL', databases: 8 },
+            amca: { name: 'America', databases: 8 },
+            russ: { name: 'Russia', databases: 8 },
+            ind: { name: 'Indian', databases: 5 },
+            ani: { name: 'Animation', databases: 8 },
+            anti: { name: 'Anti', databases: 8 }
+        };
+
+        window.onload = function() {
+            if (!localStorage.getItem('fms_creds')) {
+                localStorage.setItem('fms_creds', JSON.stringify(DEFAULT_CREDS));
+            }
+            generateCategorySections();
+            updateAllCounts();
+        };
+
+        function generateCategorySections() {
+            Object.keys(CATEGORIES).forEach(cat => {
+                const config = CATEGORIES[cat];
+                const section = document.getElementById(cat);
+                
+                let dbOptions = '';
+                for (let i = 1; i <= config.databases; i++) {
+                    dbOptions += `<option value="${cat}${i}">${cat.toUpperCase()}${i}</option>`;
+                }
+                
+                let dbFolders = '';
+                for (let i = 1; i <= config.databases; i++) {
+                    const db = `${cat}${i}`;
+                    dbFolders += `
+                        <div class="folder-item" onclick="showDatabaseList('${cat}', '${db}')">
+                            <span class="folder-icon">📁</span>
+                            <span>${db.toUpperCase()}</span>
+                            <span class="folder-count" id="${db}-count">0</span>
+                        </div>
+                    `;
+                }
+                
+                section.innerHTML = `
+                    <h2>${config.name}</h2>
+                    
+                    <div class="export-section">
+                        <h3>Export ${config.name}</h3>
+                        <div class="button-group" style="justify-content: center;">
+                            <button class="btn-html" onclick="exportCategoryHTML('${cat}')">🖼️ HTML</button>
+                            <button class="btn-success" onclick="exportCategoryJSON('${cat}')">📥 JSON</button>
+                        </div>
+                    </div>
+
+                    <div class="entry-form">
+                        <h3 id="${cat}-form-title">➕ Add Entry</h3>
+                        <form id="${cat}Form" onsubmit="return handleSubmit(event, '${cat}')">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Database *</label>
+                                    <select id="${cat}-database" required>
+                                        <option value="">Select</option>
+                                        ${dbOptions}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Name *</label>
+                                    <input type="text" id="${cat}-name" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Coder *</label>
+                                    <input type="text" id="${cat}-coder" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Alt Name</label>
+                                    <input type="text" id="${cat}-altr-name">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Link</label>
+                                <input type="url" id="${cat}-link">
+                            </div>
+                            <div class="form-group">
+                                <label>Images (1-2) *</label>
+                                <input type="file" id="${cat}-images" accept="image/*" multiple>
+                            </div>
+                            <div class="button-group">
+                                <button type="submit" class="btn-primary">Submit</button>
+                                <button type="button" class="btn-secondary" onclick="cancelEdit('${cat}')">Cancel</button>
+                            </div>
+                            <input type="hidden" id="${cat}-edit-id">
+                            <input type="hidden" id="${cat}-edit-db">
+                        </form>
+                        <div id="${cat}-message" class="success-message"></div>
+                    </div>
+
+                    <div class="database-folders">
+                        <h3>${config.name} Databases</h3>
+                        <div class="folder-grid">
+                            ${dbFolders}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Navigation
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.mobile-nav-item').forEach(i => i.classList.remove('active'));
+            if (sectionId === 'dashboard') {
+                document.querySelectorAll('.mobile-nav-item')[0].classList.add('active');
+                updateAllCounts();
+            }
+            window.scrollTo(0, 0);
+        }
+
+        function toggleCategoryMenu() {
+            const categories = ['pol', 'amca', 'russ', 'ind', 'ani', 'anti'];
+            const menu = prompt('Select category:\n1. POL\n2. AMCA\n3. RUSS\n4. IND\n5. ANI\n6. ANTI');
+            if (menu && menu >= 1 && menu <= 6) {
+                showSection(categories[menu - 1]);
+            }
+        }
+
+        // Auth
+        function handleLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const adminPassword = document.getElementById('adminPassword').value;
+            const creds = JSON.parse(localStorage.getItem('fms_creds'));
+            
+            if (username === creds.username && password === creds.password && adminPassword === creds.adminPassword) {
+                showPage('accessPasswordPage');
+            } else {
+                const errorEl = document.getElementById('loginError');
+                errorEl.textContent = '❌ Invalid credentials!';
+                errorEl.classList.add('show');
+                setTimeout(() => errorEl.classList.remove('show'), 3000);
+            }
+        }
+
+        function handleAccessPassword() {
+            const accessPassword = document.getElementById('accessPassword').value;
+            const creds = JSON.parse(localStorage.getItem('fms_creds'));
+            
+            if (accessPassword === creds.accessPassword) {
+                showPage('dashboardPage');
+                updateAllCounts();
+            } else {
+                const errorEl = document.getElementById('accessError');
+                errorEl.textContent = '❌ Invalid access password!';
+                errorEl.classList.add('show');
+                setTimeout(() => errorEl.classList.remove('show'), 3000);
+            }
+        }
+
+        function handleLogout() {
+            if (confirm('Logout?')) {
+                showPage('loginPage');
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('accessPassword').value = '';
+            }
+        }
+
+        // Data functions
+        function getDB(db) {
+            return JSON.parse(localStorage.getItem('fms_' + db) || '[]');
+        }
+
+        function saveDB(db, data) {
+            localStorage.setItem('fms_' + db, JSON.stringify(data));
+        }
+
+        async function handleSubmit(e, category) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            
+            try {
+                const database = document.getElementById(category + '-database').value;
+                if (!database) throw new Error('Select database!');
+                
+                const dbData = getDB(database);
+                const editId = document.getElementById(category + '-edit-id').value;
+                const editDb = document.getElementById(category + '-edit-db').value;
+                
+                if (editId && editDb && editDb !== database) {
+                    const oldData = getDB(editDb);
+                    oldData.splice(parseInt(editId), 1);
+                    oldData.forEach((e, idx) => e.srNo = idx + 1);
+                    saveDB(editDb, oldData);
+                }
+                
+                if (!editId && dbData.length >= 100) throw new Error('Database full!');
+                
+                const images = document.getElementById(category + '-images').files;
+                if (!editId && images.length === 0) throw new Error('Need 1 image!');
+                if (images.length > 2) throw new Error('Max 2 images!');
+                
+                const imageArray = [];
+                for (let i = 0; i < images.length; i++) {
+                    const base64 = await fileToBase64(images[i]);
+                    imageArray.push(base64);
+                }
+                
+                const entry = {
+                    srNo: editId && editDb === database ? dbData[editId].srNo : dbData.length + 1,
+                    name: document.getElementById(category + '-name').value,
+                    coder: document.getElementById(category + '-coder').value,
+                    altrName: document.getElementById(category + '-altr-name').value,
+                    link: document.getElementById(category + '-link').value,
+                    images: imageArray.length > 0 ? imageArray : (editId && editDb === database ? dbData[editId].images : []),
+                    timestamp: new Date().toISOString()
+                };
+                
+                if (editId && editDb === database) {
+                    dbData[editId] = entry;
+                } else {
+                    dbData.push(entry);
+                }
+                
+                saveDB(database, dbData);
+                showMessage(category, '✓ Saved!', 'success');
+                cancelEdit(category);
+                updateAllCounts();
+            } catch (error) {
+                showMessage(category, '❌ ' + error.message, 'error');
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Submit';
+            return false;
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function showMessage(cat, msg, type) {
+            const el = document.getElementById(cat + '-message');
+            el.textContent = msg;
+            el.className = (type === 'error' ? 'error-message' : 'success-message') + ' show';
+            setTimeout(() => el.classList.remove('show'), 5000);
+        }
+
+        function cancelEdit(cat) {
+            document.getElementById(cat + 'Form').reset();
+            document.getElementById(cat + '-edit-id').value = '';
+            document.getElementById(cat + '-edit-db').value = '';
+            document.getElementById(cat + '-form-title').textContent = '➕ Add Entry';
+            document.getElementById(cat + '-database').disabled = false;
+        }
+
+        function editEntry(cat, db, i) {
+            const data = getDB(db);
+            const entry = data[i];
+            
+            showSection(cat);
+            window.scrollTo(0, 0);
+            
+            setTimeout(() => {
+                document.getElementById(cat + '-database').value = db;
+                document.getElementById(cat + '-database').disabled = true;
+                document.getElementById(cat + '-name').value = entry.name;
+                document.getElementById(cat + '-coder').value = entry.coder;
+                document.getElementById(cat + '-altr-name').value = entry.altrName || '';
+                document.getElementById(cat + '-link').value = entry.link || '';
+                document.getElementById(cat + '-edit-id').value = i;
+                document.getElementById(cat + '-edit-db').value = db;
+                document.getElementById(cat + '-form-title').textContent = '✏️ Edit';
+            }, 100);
+            
+            closeModal();
+        }
+
+        function updateAllCounts() {
+            Object.keys(CATEGORIES).forEach(cat => {
+                let total = 0;
+                for (let i = 1; i <= CATEGORIES[cat].databases; i++) {
+                    const db = cat + i;
+                    const data = getDB(db);
+                    total += data.length;
+                    const countEl = document.getElementById(db + '-count');
+                    if (countEl) countEl.textContent = data.length;
+                }
+                const totalEl = document.getElementById(cat + 'Count');
+                if (totalEl) totalEl.textContent = total;
+            });
+        }
+
+        function showDatabaseList(cat, db) {
+            currentModalCategory = cat;
+            currentModalDatabase = db;
+            const data = getDB(db);
+            const modal = document.getElementById('modal');
+            const title = document.getElementById('modalTitle');
+            const entries = document.getElementById('modalEntries');
+            
+            title.textContent = db.toUpperCase() + ' (' + data.length + ')';
+            
+            if (data.length === 0) {
+                entries.innerHTML = '<p style="text-align:center;padding:40px;color:#666;">No entries</p>';
+            } else {
+                let html = '';
+                data.forEach((entry, i) => {
+                    html += `
+                        <div class="entry-item">
+                            <div class="entry-images">
+                                ${entry.images.map(img => '<img src="' + img + '" class="entry-image">').join('')}
+                            </div>
+                            <div class="entry-details">
+                                ${entry.link ? '<a href="' + entry.link + '" target="_blank" class="entry-link">' + entry.link + '</a>' : ''}
+                                <div class="entry-info">
+                                    <p><strong>Sr:</strong> ${entry.srNo}</p>
+                                    <p><strong>Name:</strong> ${entry.name}</p>
+                                    <p><strong>Coder:</strong> ${entry.coder}</p>
+                                    ${entry.altrName ? '<p><strong>Alt:</strong> ' + entry.altrName + '</p>' : ''}
+                                    <p style="font-size: 0.8rem; color: #999;">${new Date(entry.timestamp).toLocaleDateString()}</p>
+                                </div>
+                                <div class="entry-actions">
+                                    <button class="btn-edit" onclick="editEntry('${cat}','${db}',${i})">✏️ Edit</button>
+                                    <button class="btn-delete" onclick="deleteEntry('${cat}','${db}',${i})">🗑️ Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                entries.innerHTML = html;
+            }
+            modal.style.display = 'block';
+        }
+
+        function deleteEntry(cat, db, i) {
+            if (!confirm('Delete this entry?')) return;
+            const data = getDB(db);
+            data.splice(i, 1);
+            data.forEach((e, idx) => e.srNo = idx + 1);
+            saveDB(db, data);
+            showDatabaseList(cat, db);
+            updateAllCounts();
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // Export functions
+        function exportAllDataHTML() {
+            let html = generateHTMLExport('All Categories', getAllData());
+            downloadFile(html, 'FMS_Mobile_' + new Date().toISOString().split('T')[0] + '.html', 'text/html');
+            alert('✓ Exported! Check Downloads folder');
+        }
+
+        function exportCategoryHTML(cat) {
+            const catName = CATEGORIES[cat].name;
+            let html = generateHTMLExport(catName, getCategoryData(cat));
+            downloadFile(html, 'FMS_' + catName + '_' + new Date().toISOString().split('T')[0] + '.html', 'text/html');
+            alert('✓ Exported! Check Downloads');
+        }
+
+        function getAllData() {
+            const allData = [];
+            Object.keys(CATEGORIES).forEach(cat => {
+                for (let i = 1; i <= CATEGORIES[cat].databases; i++) {
+                    const db = cat + i;
+                    const data = getDB(db);
+                    data.forEach(entry => {
+                        allData.push({
+                            category: CATEGORIES[cat].name,
+                            database: db.toUpperCase(),
+                            ...entry
+                        });
+                    });
+                }
+            });
+            return allData;
+        }
+
+        function getCategoryData(cat) {
+            const catData = [];
+            for (let i = 1; i <= CATEGORIES[cat].databases; i++) {
+                const db = cat + i;
+                const data = getDB(db);
+                data.forEach(entry => {
+                    catData.push({
+                        database: db.toUpperCase(),
+                        ...entry
+                    });
+                });
+            }
+            return catData;
+        }
+
+        function generateHTMLExport(title, data) {
+            let entriesHTML = '';
+            data.forEach((entry, idx) => {
+                const imagesHTML = entry.images.map(img => 
+                    `<img src="${img}" style="max-width: 100%; height: auto; margin: 10px 0; border-radius: 8px;">`
+                ).join('');
+                
+                entriesHTML += `
+                    <div style="background: white; padding: 20px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        ${imagesHTML}
+                        <h3 style="color: #667eea; margin: 15px 0;">Entry #${idx + 1}</h3>
+                        ${entry.category ? `<p><strong>Category:</strong> ${entry.category}</p>` : ''}
+                        <p><strong>Database:</strong> ${entry.database}</p>
+                        <p><strong>Name:</strong> ${entry.name}</p>
+                        <p><strong>Coder:</strong> ${entry.coder}</p>
+                        ${entry.altrName ? `<p><strong>Alt:</strong> ${entry.altrName}</p>` : ''}
+                        ${entry.link ? `<p><strong>Link:</strong> <a href="${entry.link}">${entry.link}</a></p>` : ''}
+                        <p style="color: #999; font-size: 0.9rem;">${new Date(entry.timestamp).toLocaleDateString()}</p>
+                    </div>
+                `;
+            });
+
+            return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FMS - ${title}</title>
+<style>body{font-family:sans-serif;background:#f0f0f0;padding:20px;margin:0;}
+.container{max-width:800px;margin:0 auto;background:#fff;padding:20px;border-radius:15px;}
+h1{color:#2c3e50;text-align:center;}img{max-width:100%;height:auto;}</style></head>
+<body><div class="container"><h1>📁 ${title}</h1><p style="text-align:center;color:#666;">
+Exported: ${new Date().toLocaleString()}<br>Total: ${data.length} entries</p>${entriesHTML}</div></body></html>`;
+        }
+
+        function exportAllDataJSON() {
+            const exportData = { 
+                exportDate: new Date().toISOString(),
+                version: '1.0',
+                data: {} 
+            };
+            
+            Object.keys(CATEGORIES).forEach(cat => {
+                exportData.data[cat] = {};
+                for (let i = 1; i <= CATEGORIES[cat].databases; i++) {
+                    const db = cat + i;
+                    exportData.data[cat][db] = getDB(db);
+                }
+            });
+            
+            downloadFile(
+                JSON.stringify(exportData, null, 2),
+                'FMS_Backup_' + new Date().toISOString().split('T')[0] + '.json',
+                'application/json'
+            );
+            alert('✓ JSON backup created!');
+        }
+
+        function exportCategoryJSON(cat) {
+            const exportData = { 
+                exportDate: new Date().toISOString(),
+                category: CATEGORIES[cat].name,
+                version: '1.0',
+                data: {} 
+            };
+            
+            for (let i = 1; i <= CATEGORIES[cat].databases; i++) {
+                const db = cat + i;
+                exportData.data[db] = getDB(db);
+            }
+            
+            downloadFile(
+                JSON.stringify(exportData, null, 2),
+                'FMS_' + CATEGORIES[cat].name + '_' + new Date().toISOString().split('T')[0] + '.json',
+                'application/json'
+            );
+            alert('✓ Backup created!');
+        }
+
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const importData = JSON.parse(ev.target.result);
+                    if (!importData.data) throw new Error('Invalid file!');
+                    
+                    Object.keys(importData.data).forEach(cat => {
+                        Object.keys(importData.data[cat]).forEach(db => {
+                            saveDB(db, importData.data[cat][db]);
+                        });
+                    });
+                    
+                    alert('✓ Imported!');
+                    updateAllCounts();
+                    e.target.value = '';
+                } catch (error) {
+                    alert('❌ Import failed: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        window.onclick = function(e) {
+            if (e.target.id === 'modal') closeModal();
+        };
+    </script>
+</body>
+</html>
